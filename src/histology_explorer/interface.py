@@ -29,6 +29,7 @@ CROP_COLOR = (0, 200, 255)
 INVALID_CROP_COLOR = (255, 40, 40)
 OUTSIDE_DIMMING = 0.45
 ANCHOR_ARM = 8
+TISSUE_DISPLAY_NAMES = {"Adrenal_gland": "Adrenal gland", "Bile-duct": "Bile duct", "HeadNeck": "Head and neck"}
 
 INPUT_DESCRIPTION = (
     "**Accepted input:** one H&E-stained tissue image as **PNG, JPEG (.jpg, .jpeg, .jfif) or single-page TIFF**, "
@@ -158,10 +159,13 @@ def legend_html(model: SegmentationModel) -> str:
     return f"<div>{items}</div>"
 
 
-def summarize(nuclei: list[dict], image: LoadedImage, crop: Crop | None) -> str:
+def summarize(nuclei: list[dict], tissue_type: str) -> str:
     counts = Counter(n["type_name"] for n in nuclei)
     breakdown = " · ".join(f"{name}: {count}" for name, count in sorted(counts.items()))
-    return f"### {len(nuclei)} nuclei detected\n{breakdown}\n\nImage: {describe_region(image, crop)}"
+    return (
+        f"## Predicted tissue type for this patch: {TISSUE_DISPLAY_NAMES.get(tissue_type, tissue_type)}\n"
+        f"### {len(nuclei)} nuclei detected\n{breakdown}"
+    )
 
 
 def build_interface(model: SegmentationModel, sample_path: Path) -> gr.Blocks:
@@ -183,23 +187,23 @@ def build_interface(model: SegmentationModel, sample_path: Path) -> gr.Blocks:
         preview = draw_selection(source, new_selection)
         numbers = (crop.left, crop.top, crop.width, crop.height) if echo_numbers else (gr.skip(),) * 4
         if crop == selection["crop"]:
-            return (new_selection, gr.skip(), preview, *numbers, message, gr.skip(), gr.skip(), gr.skip())
+            return (new_selection, gr.skip(), preview, *numbers, message, gr.skip(), gr.skip(), gr.skip(), gr.skip())
         valid = "valid" if result_image is not None else "not usable"
         print(f"[crop] x={crop.left} y={crop.top} {crop.width}x{crop.height} ({valid}); previous result cleared", flush=True)
-        return (new_selection, None, preview, *numbers, message, result_image, status, "")
+        return (new_selection, None, preview, *numbers, message, result_image, status, "", "")
 
     def cleared(status):
-        return (None, gr.Column(visible=False), None, None, None, None, None, None, None, "", None, status, "")
+        return (None, gr.Column(visible=False), None, None, None, None, None, None, None, "", None, status, "", "")
 
     def begin_loading(file_path):
         if file_path is None:
-            return tuple(gr.skip() for _ in range(13))
+            return tuple(gr.skip() for _ in range(14))
         print(f"[load] {Path(file_path).name}: previous image and result cleared", flush=True)
         return cleared(f"Loading {Path(file_path).name}…")
 
     def load_file(file_path):
         if file_path is None:
-            return (gr.skip(), gr.skip(), *(gr.skip() for _ in range(13)))
+            return (gr.skip(), gr.skip(), *(gr.skip() for _ in range(14)))
         name = Path(file_path).name
         try:
             image = load_image(file_path)
@@ -210,7 +214,7 @@ def build_interface(model: SegmentationModel, sample_path: Path) -> gr.Blocks:
         if not image.needs_crop:
             shown = enlarge(image.pixels, display_scale(image.height, image.width))
             status = f"Loaded {name}: {describe_image(image)}. Press **Run segmentation**."
-            return (file_path, None, source, gr.Column(visible=False), None, None, None, None, None, None, None, "", shown, status, "")
+            return (file_path, None, source, gr.Column(visible=False), None, None, None, None, None, None, None, "", shown, status, "", "")
         crop = Crop.centred(image.width, image.height)
         selection = {"crop": crop, "anchor": None}
         shown, message, _ = crop_view(source, crop)
@@ -221,12 +225,12 @@ def build_interface(model: SegmentationModel, sample_path: Path) -> gr.Blocks:
         )
         return (
             file_path, None, source, gr.Column(visible=True), selection, None, draw_selection(source, selection),
-            crop.left, crop.top, crop.width, crop.height, message, shown, status, "",
+            crop.left, crop.top, crop.width, crop.height, message, shown, status, "", "",
         )
 
     def select_corner(source, selection, event: gr.SelectData):
         if source is None or selection is None:
-            return tuple(gr.skip() for _ in range(11))
+            return tuple(gr.skip() for _ in range(12))
         point = preview_to_source(event.index, source["preview"], source["image"])
         if selection["anchor"] is None:
             new_selection = {"crop": selection["crop"], "anchor": point}
@@ -235,17 +239,17 @@ def build_interface(model: SegmentationModel, sample_path: Path) -> gr.Blocks:
                 f"First corner at (x={point[0]}, y={point[1]}). Click the opposite corner; "
                 "the current crop stays active until then."
             )
-            return (new_selection, gr.skip(), draw_selection(source, new_selection), gr.skip(), gr.skip(), gr.skip(), gr.skip(), message, gr.skip(), gr.skip(), gr.skip())
+            return (new_selection, gr.skip(), draw_selection(source, new_selection), gr.skip(), gr.skip(), gr.skip(), gr.skip(), message, gr.skip(), gr.skip(), gr.skip(), gr.skip())
         return change_crop(source, selection, Crop.from_corners(selection["anchor"], point), echo_numbers=True)
 
     def apply_numbers(left, top, width, height, source, selection):
         if source is None or selection is None:
-            return tuple(gr.skip() for _ in range(11))
+            return tuple(gr.skip() for _ in range(12))
         if any(value is None for value in (left, top, width, height)):
-            return (gr.skip(),) * 7 + ("Enter whole numbers for x, y, width and height.",) + (gr.skip(),) * 3
+            return (gr.skip(),) * 7 + ("Enter whole numbers for x, y, width and height.",) + (gr.skip(),) * 4
         crop = Crop(int(left), int(top), int(width), int(height))
         if crop == selection["crop"] and selection["anchor"] is None:
-            return tuple(gr.skip() for _ in range(11))
+            return tuple(gr.skip() for _ in range(12))
         return change_crop(source, selection, crop, echo_numbers=False)
 
     def run_segmentation(source, selection, show_overlay):
@@ -281,7 +285,8 @@ def build_interface(model: SegmentationModel, sample_path: Path) -> gr.Blocks:
             "nuclei": {n["id"]: n for n in result.nuclei},
         }
         shown = state["overlay"] if show_overlay else state["image"]
-        return state, shown, summarize(result.nuclei, image, crop), "Click a nucleus to see its details."
+        status = f"Image: {describe_region(image, crop)}"
+        return state, shown, status, "Click a nucleus to see its details.", summarize(result.nuclei, result.tissue_type)
 
     def toggle_overlay(show_overlay, state):
         if state is None:
@@ -352,6 +357,7 @@ def build_interface(model: SegmentationModel, sample_path: Path) -> gr.Blocks:
                 status = gr.Markdown("", elem_id="status")
             with gr.Column(scale=1):
                 gr.Markdown("**Processed patch:** the exact pixels sent to the model. After a run, click a nucleus.")
+                summary = gr.Markdown("", elem_id="summary")
                 result_image = gr.Image(
                     type="numpy",
                     format="png",
@@ -366,13 +372,13 @@ def build_interface(model: SegmentationModel, sample_path: Path) -> gr.Blocks:
                 details = gr.Markdown("", elem_id="details")
 
         crop_numbers = [crop_left, crop_top, crop_width, crop_height]
-        crop_outputs = [selection_state, result_state, source_image, *crop_numbers, crop_message, result_image, status, details]
+        crop_outputs = [selection_state, result_state, source_image, *crop_numbers, crop_message, result_image, status, details, summary]
         queue = {"concurrency_id": "image", "concurrency_limit": 1}
 
         run_event = run_button.click(
             run_segmentation,
             inputs=[source_state, selection_state, overlay_toggle],
-            outputs=[result_state, result_image, status, details],
+            outputs=[result_state, result_image, status, details, summary],
             **queue,
         )
         load_outputs = [source_state, crop_panel, *crop_outputs]
