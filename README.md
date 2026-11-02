@@ -13,15 +13,13 @@ weights; this project is the application, validation and packaging built around 
 - **Varied image input:** PNG, JPEG and TIFF uploads are checked by content, not file extension, and
   rotated according to their orientation tags. Unsupported files are rejected with the reason.
 - **Original-resolution crop selection:** images larger than 512 px open as a preview with a crop
-  box. The crop is cut from the full-resolution pixels, never from the preview.
+  box, set by clicking two opposite corners or typing its position and size. The crop is cut from
+  the full-resolution pixels, never from the preview.
 - **Interactive results:** a toggleable instance overlay coloured by nucleus type, per-type counts,
   and the ID, area and type of any nucleus you click. Dropping in a new image replaces the old one.
 - **Validation against upstream:** a script that compares each stage with the original CellViT code.
 - **Docker packaging:** a one-command Compose setup and a published image. The checkpoint is
   downloaded and verified on first run and kept outside the image.
-
-The model architecture, trained weights and postprocessing algorithm are CellViT's (Hörst et al.).
-They were not retrained or changed in this project.
 
 ## Input and limits
 
@@ -56,11 +54,11 @@ docker run --rm --user 0:0 -v histology-explorer-checkpoints:/app/checkpoints gh
 docker run --rm --name histology-explorer -p 127.0.0.1:7860:7860 -v histology-explorer-checkpoints:/app/checkpoints:ro ghcr.io/mhassan93/histology-explorer:v0.1.0
 ```
 
-Open **http://localhost:7860**, and stop it with `docker stop histology-explorer`. Later runs need
-only the second command. The image is built for linux/amd64.
+Open the same address, and stop it with `docker stop histology-explorer`. Later runs need only the
+second command. The image is built for linux/amd64.
 
-Local Python setup, the command-line tool, the verification scripts and how the Docker setup works
-are described in [docs/development.md](docs/development.md).
+Local Python setup, the command-line tool, the verification scripts and Docker troubleshooting
+notes are in [docs/development.md](docs/development.md).
 
 ## Validation
 
