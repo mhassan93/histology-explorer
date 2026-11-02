@@ -7,7 +7,7 @@ model and run its CPU/NumPy instance postprocessing on a single image patch.
 |---|---|
 | Upstream | https://github.com/TIO-IKIM/CellViT-Inference |
 | Commit | `d2143ded642846c6265fcfda9711a0376a894d8e` (2025-08-13, package version 1.0.9) |
-| Licence | See [`LICENSE`](LICENSE): Apache 2.0 for the SAM-derived components. Apache 2.0 with the Commons Clause for the HIPT-derived components (no right to "Sell", as defined in Appendix B of the licence, without written permission from Mahmood Lab) and for the original CellViT code (the same, with permission from Fabian Hörst and Jens Kleesiek, plus mandatory citation). The repository's top-level MIT licence does not apply to this directory. |
+| Licence | See [`LICENSE`](LICENSE): Apache 2.0 for the SAM-derived components. Apache 2.0 with the Commons Clause for the HIPT-derived components (no right to "Sell", as defined in Appendix B of the licence, without written permission from Mahmood Lab) and for the original CellViT code (the same, with permission from Fabian Hörst and Jens Kleesiek, plus mandatory citation). The per-component summaries at the top of the licence word the restriction as "sell, rent, or commercially exploit". The repository's top-level MIT licence does not apply to this directory. |
 | Authors | Fabian Hörst, Jens Kleesiek and colleagues, Institute for AI in Medicine (IKIM), University Medicine Essen |
 
 ## Files
