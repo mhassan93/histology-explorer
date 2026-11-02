@@ -1,0 +1,21 @@
+name: histology-explorer
+
+services:
+  checkpoint:
+    image: histology-explorer:local
+    pull_policy: never
+    user: "0:0"
+    command: ["python", "scripts/download_checkpoint.py", "--dir", "checkpoints"]
+    volumes:
+      - ./checkpoints:/app/checkpoints
+
+  app:
+    build: .
+    image: histology-explorer:local
+    depends_on:
+      checkpoint:
+        condition: service_completed_successfully
+    volumes:
+      - ./checkpoints:/app/checkpoints:ro
+    ports:
+      - "127.0.0.1:7860:7860"

@@ -1,0 +1,38 @@
+name: Publish image
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions: {}
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_REF_NAME}"
+          docker build \
+            --label "org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            --label "org.opencontainers.image.version=${GITHUB_REF_NAME}" \
+            --tag "$image" .
+          echo "IMAGE=$image" >> "$GITHUB_ENV"
+
+      - name: Push
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          docker push "$IMAGE"
+          docker logout ghcr.io
+          echo "Pushed \`$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE")\`" >> "$GITHUB_STEP_SUMMARY"

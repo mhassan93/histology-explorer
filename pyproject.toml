@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "histology-explorer"
+version = "0.1.0"
+description = "CPU nuclei instance segmentation and classification (CellViT-256) for H&E image patches, with a browser interface."
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src", "third_party/cellvit_inference"]
+include = ["histology_explorer*", "cellvit*"]

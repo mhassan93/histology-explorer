@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.egg-info/
+build/
+dist/
+
+checkpoints/
+outputs/
+*.pth
+*.pt
+*.part
+
+STEP1_REPORT.md

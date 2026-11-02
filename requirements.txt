@@ -1,0 +1,24 @@
+# Direct dependencies, pinned. Full transitive lock: requirements-lock.txt
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# Model and preprocessing (CPU-only PyTorch build)
+torch==2.8.0+cpu
+torchvision==0.23.0+cpu
+
+# Instance postprocessing (upstream postprocessing_numpy.py)
+numpy==2.2.6
+opencv-python-headless==4.12.0.88
+scipy==1.18.1
+scikit-image==0.26.0
+einops==0.8.2
+
+# Imported at module level by vendored upstream files, not used on the inference path
+numba==0.68.0
+pandas==3.0.6
+
+# Image I/O and benchmarking
+pillow==12.3.0
+psutil==7.2.2
+
+# Browser interface
+gradio==6.29.1
